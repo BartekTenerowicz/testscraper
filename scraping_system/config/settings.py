@@ -4,7 +4,10 @@ Configuration settings for CoTenWrocław scraping system
 
 import os
 from typing import Dict, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+
+# Default values for various settings
+DEFAULT_MAX_IMAGE_URLS: int = 5
 
 @dataclass
 class Settings:
@@ -20,6 +23,9 @@ class Settings:
     DEFAULT_REQUEST_TIMEOUT: int = int(os.getenv('DEFAULT_REQUEST_TIMEOUT', '30'))
     DEFAULT_RETRY_ATTEMPTS: int = int(os.getenv('DEFAULT_RETRY_ATTEMPTS', '3'))
     DEFAULT_RATE_LIMIT_DELAY: int = int(os.getenv('DEFAULT_RATE_LIMIT_DELAY', '1000'))
+
+    # Content settings
+    MAX_IMAGE_URLS: int = int(os.getenv('MAX_IMAGE_URLS', str(DEFAULT_MAX_IMAGE_URLS)))
     
     # Scheduler settings
     SCHEDULER_CHECK_INTERVAL: int = int(os.getenv('SCHEDULER_CHECK_INTERVAL', '300'))  # 5 minutes
@@ -38,21 +44,21 @@ class Settings:
     
     # Proxy settings (optional)
     USE_PROXY: bool = os.getenv('USE_PROXY', 'false').lower() == 'true'
-    PROXY_LIST: list = os.getenv('PROXY_LIST', '').split(',') if os.getenv('PROXY_LIST') else []
+    PROXY_LIST: list = field(default_factory=lambda: os.getenv('PROXY_LIST', '').split(',') if os.getenv('PROXY_LIST') else [])
     
     # Language settings
-    SUPPORTED_LANGUAGES: list = ['pl', 'en']
+    SUPPORTED_LANGUAGES: list = field(default_factory=lambda: ['pl', 'en'])
     DEFAULT_LANGUAGE: str = 'pl'
     
     # Content filtering keywords for Wrocław
-    WROCLAW_KEYWORDS: list = [
+    WROCLAW_KEYWORDS: list = field(default_factory=lambda: [
         'wrocław', 'wroclaw', 'dolnośląskie', 'dolnoslaskie',
         'stare miasto', 'rynek', 'ostrów tumski', 'nadodrze',
         'krzyki', 'fabryczna', 'psie pole', 'śródmieście'
-    ]
+    ])
     
     # Category mapping for auto-categorization
-    CATEGORY_KEYWORDS: Dict[str, list] = {
+    CATEGORY_KEYWORDS: Dict[str, list] = field(default_factory=lambda: {
         'Events': ['wydarzenie', 'event', 'festiwal', 'koncert', 'spektakl', 'wystawa'],
         'Food': ['restauracja', 'kawiarnia', 'bar', 'kuchnia', 'jedzenie', 'food'],
         'Business': ['firma', 'biznes', 'otwarcie', 'promocja', 'sklep', 'usługa'],
@@ -61,7 +67,7 @@ class Settings:
         'Community': ['społeczność', 'community', 'wolontariat', 'pomoc', 'inicjatywa'],
         'Transport': ['transport', 'komunikacja', 'autobus', 'tramwaj', 'parking'],
         'News': ['news', 'wiadomości', 'informacja', 'ogłoszenie', 'komunikat']
-    }
+    })
     
     def __post_init__(self):
         """Validate settings after initialization"""
@@ -73,6 +79,9 @@ class Settings:
         
         if self.DUPLICATE_SIMILARITY_THRESHOLD < 0.1 or self.DUPLICATE_SIMILARITY_THRESHOLD > 1.0:
             raise ValueError("DUPLICATE_SIMILARITY_THRESHOLD must be between 0.1 and 1.0")
+
+        if self.MAX_IMAGE_URLS < 1:
+            raise ValueError("MAX_IMAGE_URLS must be at least 1")
 
 # Global settings instance
 settings = Settings()

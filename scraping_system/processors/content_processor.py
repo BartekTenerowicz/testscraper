@@ -186,7 +186,7 @@ class ContentProcessor:
             if self.is_valid_image_url(url):
                 cleaned_urls.append(url.strip())
         
-        return cleaned_urls[:settings.content.get('maxImageUrls', 5)]
+        return cleaned_urls[:settings.MAX_IMAGE_URLS]
     
     def is_valid_image_url(self, url: str) -> bool:
         """Check if image URL is valid"""
