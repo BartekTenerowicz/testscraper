@@ -57,25 +57,10 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS content (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   source_id uuid REFERENCES sources(id) ON DELETE CASCADE,
-  content_type text NOT NULL CHECK (content_type IN ('Event', 'Local News', 'Business Update', 'Community Activity')),
-  title text NOT NULL,
+  content_type text,
+  title text,
   description text,
-  start_date timestamptz,
-  end_date timestamptz,
-  location text,
-  location_coordinates geometry(POINT, 4326),
-  price_info text,
-  original_url text,
-  image_urls jsonb DEFAULT '[]',
-  extracted_at timestamptz DEFAULT now(),
-  processed_at timestamptz,
-  is_active boolean DEFAULT true,
-  engagement_score integer DEFAULT 0,
-  content_hash text, -- For duplicate detection
-  language_code text DEFAULT 'pl',
-  metadata jsonb DEFAULT '{}',
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
+  link text
 );
 
 -- Content categories many-to-many relationship
@@ -155,11 +140,6 @@ CREATE INDEX IF NOT EXISTS idx_sources_last_scraped ON sources(last_scraped_at);
 
 CREATE INDEX IF NOT EXISTS idx_content_source ON content(source_id);
 CREATE INDEX IF NOT EXISTS idx_content_type ON content(content_type);
-CREATE INDEX IF NOT EXISTS idx_content_date ON content(start_date);
-CREATE INDEX IF NOT EXISTS idx_content_location ON content USING GIST(location_coordinates);
-CREATE INDEX IF NOT EXISTS idx_content_active ON content(is_active);
-CREATE INDEX IF NOT EXISTS idx_content_hash ON content(content_hash);
-CREATE INDEX IF NOT EXISTS idx_content_extracted ON content(extracted_at);
 
 -- Full-text search index
 CREATE INDEX IF NOT EXISTS idx_content_search ON content USING GIN(to_tsvector('english', title || ' ' || COALESCE(description, '')));
@@ -181,7 +161,6 @@ END;
 $$ language 'plpgsql';
 
 CREATE TRIGGER update_sources_updated_at BEFORE UPDATE ON sources FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_content_updated_at BEFORE UPDATE ON content FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_preferences_updated_at BEFORE UPDATE ON user_preferences FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Insert default categories
